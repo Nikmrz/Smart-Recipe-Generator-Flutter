@@ -1,18 +1,113 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:smart_recipe_generator_flutter/app/modules/home/views/home_view.dart';
+import 'package:http/http.dart' as http;
+import 'package:smart_recipe_generator_flutter/app/modules/Authenticate/views/authenticate_view.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key, required this.controller});
   final PageController controller;
-  
+
   @override
   State<SignUpScreen> createState() => _SignUpScreenState();
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
+
+  bool _isLoading = false;
+  String? _nameError;
+  String? _emailError;
+  String? _phoneError;
+  String? _passError;
+
+  Future<void> _signUp() async {
+    setState(() {
+      _nameError =
+          _nameController.text.trim().isEmpty ? "Please enter your name" : null;
+      _emailError =
+          _emailController.text.trim().isEmpty
+              ? "Please enter your email"
+              : null;
+      _phoneError =
+          _phoneController.text.trim().isEmpty
+              ? "Please enter your phone number"
+              : null;
+      _passError =
+          _passController.text.trim().isEmpty
+              ? "Please enter your password"
+              : null;
+    });
+
+    if (_nameError != null ||
+        _emailError != null ||
+        _phoneError != null ||
+        _passError != null) {
+      return;
+    }
+
+    final String apiUrl = "http://127.0.0.1:3000/signup";
+    final Map<String, dynamic> userData = {
+      "user": {
+        "name": _nameController.text.trim(),
+        "email": _emailController.text.trim(),
+        "password": _passController.text.trim(),
+        "phone": _phoneController.text.trim(),
+      },
+    };
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(userData),
+      );
+
+      final Map<String, dynamic> responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Sign up successful"),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => AuthenticateView()),
+        );
+      }else{
+        String errorMessage = "An error occurred. Please try again.";
+        if (responseData.containsKey("status") && responseData["status"]["message"] != null) {
+          errorMessage = responseData["status"]["message"];
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("An error occurred. Please try again."),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,74 +136,59 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
               const SizedBox(height: 30),
 
-              // Email Field
-              SizedBox(
-                height: 56,
-                child: TextField(
-                  controller: _emailController,
-                  textAlign: TextAlign.center,
-                  decoration: _inputDecoration('Email', 'Enter a valid Email'),
-                ),
+              _buildTextField(
+                _nameController,
+                "Name",
+                "Enter full name",
+                _nameError,
               ),
-              const SizedBox(height: 17),
-
-              // Username Field
-              SizedBox(
-                height: 56,
-                child: TextField(
-                  controller: _usernameController,
-                  textAlign: TextAlign.center,
-                  decoration: _inputDecoration('Username', 'Enter a unique username'),
-                ),
+              _buildTextField(
+                _emailController,
+                "Email",
+                "Enter a valid Email",
+                _emailError,
               ),
-              const SizedBox(height: 17),
-
-              // Password Field
-              SizedBox(
-                height: 56,
-                child: TextField(
-                  controller: _passController,
-                  textAlign: TextAlign.center,
-                  obscureText: true,
-                  decoration: _inputDecoration('Password', 'Create a strong password'),
-                ),
+              _buildTextField(
+                _phoneController,
+                "Phone",
+                "Enter phone number",
+                _phoneError,
               ),
-              const SizedBox(height: 25),
+              _buildTextField(
+                _passController,
+                "Password",
+                "Create a strong password",
+                _passError,
+                obscureText: true,
+              ),
 
-              // Create Account Button
               SizedBox(
                 width: 329,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => HomeView() // user back najawos vanera .pushreplacement gareko if garne vaye .push
-                    ),
-                  );
-                },
-
+                  onPressed: _isLoading ? null : _signUp,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF9F7BFF),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: const Text(
-                    'Create account',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                  child:
+                      _isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text(
+                            'Create account',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                 ),
               ),
               const SizedBox(height: 15),
 
-              // Login Link
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -124,9 +204,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   const SizedBox(width: 5),
                   InkWell(
                     onTap: () {
-                      widget.controller.animateToPage(0,
-                          duration: const Duration(milliseconds: 500),
-                          curve: Curves.ease);
+                      widget.controller.animateToPage(
+                        0,
+                        duration: const Duration(milliseconds: 500),
+                        curve: Curves.ease,
+                      );
                     },
                     child: const Text(
                       'Log In',
@@ -142,7 +224,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
               const SizedBox(height: 20),
 
-              // OR Divider
               Row(
                 children: [
                   Expanded(child: Divider(color: Color(0xFF837E93))),
@@ -163,7 +244,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
               const SizedBox(height: 15),
 
-              // Sign Up with Google Button
               SizedBox(
                 width: 329,
                 height: 56,
@@ -179,7 +259,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                   ),
                   icon: Image.asset(
-                    'assets/icons/google.png', // Make sure to add this asset
+                    'assets/icons/google.png',
                     width: 24,
                     height: 24,
                   ),
@@ -202,36 +282,55 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  InputDecoration _inputDecoration(String label, String hint) {
-    return InputDecoration(
-      labelText: label,
-      hintText: hint,
-      hintStyle: const TextStyle(
-        color: Color(0xFF837E93),
-        fontSize: 10,
-        fontFamily: 'Poppins',
-        fontWeight: FontWeight.w400,
-      ),
-      labelStyle: const TextStyle(
-        color: Color(0xFF755DC1),
-        fontSize: 15,
-        fontFamily: 'Poppins',
-        fontWeight: FontWeight.w600,
-      ),
-      enabledBorder: const OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(10)),
-        borderSide: BorderSide(
-          width: 1,
-          color: Color(0xFF837E93),
+  Widget _buildTextField(
+    TextEditingController controller,
+    String label,
+    String hint,
+    String? error, {
+    bool obscureText = false,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          height: 56,
+          child: TextField(
+            controller: controller,
+            textAlign: TextAlign.center,
+            obscureText: obscureText,
+            decoration: InputDecoration(
+              labelText: label,
+              hintText: hint,
+              hintStyle: const TextStyle(
+                color: Color(0xFF837E93),
+                fontSize: 10,
+              ),
+              labelStyle: const TextStyle(
+                color: Color(0xFF755DC1),
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+              enabledBorder: const OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(10)),
+                borderSide: BorderSide(width: 1, color: Color(0xFF837E93)),
+              ),
+              focusedBorder: const OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(10)),
+                borderSide: BorderSide(width: 1, color: Color(0xFF9F7BFF)),
+              ),
+            ),
+          ),
         ),
-      ),
-      focusedBorder: const OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(10)),
-        borderSide: BorderSide(
-          width: 1,
-          color: Color(0xFF9F7BFF),
-        ),
-      ),
+        if (error != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 5, left: 12),
+            child: Text(
+              error,
+              style: const TextStyle(color: Colors.red, fontSize: 12),
+            ),
+          ),
+        const SizedBox(height: 17),
+      ],
     );
   }
 }
