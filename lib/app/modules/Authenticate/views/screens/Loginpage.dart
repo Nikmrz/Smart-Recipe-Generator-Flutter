@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:smart_recipe_generator_flutter/app/modules/home/views/home_view.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -12,6 +14,84 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
+  bool _isLoading = false; // For disabling button while making request
+  String? _emailError;
+  String? _passError;
+
+  Future<void> _loginUser() async {
+    setState(() {
+      _emailError =
+          _emailController.text.trim().isEmpty
+              ? "Please enter your email"
+              : null;
+      _passError =
+          _passController.text.trim().isEmpty
+              ? "Please enter your password"
+              : null;
+    });
+
+    if (_emailError != null || _passError != null) {
+      return; // Stop if there are frontend validation errors
+    }
+
+    final String apiUrl = "http://127.0.0.1:3000/login";
+    final Map<String, dynamic> loginData = {
+      "user": {
+        "email": _emailController.text.trim(),
+        "password": _passController.text.trim(),
+      },
+    };
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(loginData),
+      );
+
+      final Map<String, dynamic> responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        // Login success
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Login successful"),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomeView()),
+        );
+      } else {
+        // Display backend error message
+        String errorMessage = "An error occurred. Please try again.";
+        if (responseData.containsKey("status") && responseData["status"]["message"] != null) {
+          errorMessage = responseData["status"]["message"];
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
+        );
+      }
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("An error occurred. Please try again."),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,56 +121,43 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 30),
 
               // Email Input Field
-              SizedBox(
-                height: 56,
-                child: TextField(
-                  controller: _emailController,
-                  textAlign: TextAlign.center,
-                  decoration: _inputDecoration('Email', 'Enter your email'),
-                ),
+               _buildTextField(
+                _emailController,
+                "Email",
+                "Enter your email",
+                _emailError,
               ),
-              const SizedBox(height: 17),
-
-              // Password Input Field
-              SizedBox(
-                height: 56,
-                child: TextField(
-                  controller: _passController,
-                  textAlign: TextAlign.center,
-                  obscureText: true,
-                  decoration: _inputDecoration('Password', 'Enter your password'),
-                ),
+              _buildTextField(
+                _passController,
+                "Password",
+                "Enter your password",
+                _passError,
+                obscureText: true,
               ),
-              const SizedBox(height: 25),
 
               // Sign In Button
               SizedBox(
                 width: 329,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => HomeView() // user back najawos vanera .pushreplacement gareko if garne vaye .push
-                    ),
-                  );
-                },
+                  onPressed: _isLoading ? null : _loginUser, // Disable button while loading
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF9F7BFF),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: const Text(
-                    'Log In',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          'Log In',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(height: 15),
@@ -206,37 +273,55 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // Helper function for input decorations
-  InputDecoration _inputDecoration(String label, String hint) {
-    return InputDecoration(
-      labelText: label,
-      hintText: hint,
-      hintStyle: const TextStyle(
-        color: Color(0xFF837E93),
-        fontSize: 10,
-        fontFamily: 'Poppins',
-        fontWeight: FontWeight.w400,
-      ),
-      labelStyle: const TextStyle(
-        color: Color(0xFF755DC1),
-        fontSize: 15,
-        fontFamily: 'Poppins',
-        fontWeight: FontWeight.w600,
-      ),
-      enabledBorder: const OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(10)),
-        borderSide: BorderSide(
-          width: 1,
-          color: Color(0xFF837E93),
+  Widget _buildTextField(
+    TextEditingController controller,
+    String label,
+    String hint,
+    String? error, {
+    bool obscureText = false,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          height: 56,
+          child: TextField(
+            controller: controller,
+            textAlign: TextAlign.center,
+            obscureText: obscureText,
+            decoration: InputDecoration(
+              labelText: label,
+              hintText: hint,
+              hintStyle: const TextStyle(
+                color: Color(0xFF837E93),
+                fontSize: 10,
+              ),
+              labelStyle: const TextStyle(
+                color: Color(0xFF755DC1),
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+              enabledBorder: const OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(10)),
+                borderSide: BorderSide(width: 1, color: Color(0xFF837E93)),
+              ),
+              focusedBorder: const OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(10)),
+                borderSide: BorderSide(width: 1, color: Color(0xFF9F7BFF)),
+              ),
+            ),
+          ),
         ),
-      ),
-      focusedBorder: const OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(10)),
-        borderSide: BorderSide(
-          width: 1,
-          color: Color(0xFF9F7BFF),
-        ),
-      ),
+        if (error != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 5, left: 12),
+            child: Text(
+              error,
+              style: const TextStyle(color: Colors.red, fontSize: 12),
+            ),
+          ),
+        const SizedBox(height: 17),
+      ],
     );
   }
 }
