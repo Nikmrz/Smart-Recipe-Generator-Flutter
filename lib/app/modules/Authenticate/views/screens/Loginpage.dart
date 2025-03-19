@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:get_storage/get_storage.dart';
 import 'package:smart_recipe_generator_flutter/app/modules/home/views/home_view.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -17,6 +18,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false; // For disabling button while making request
   String? _emailError;
   String? _passError;
+  final box = GetStorage();
 
   Future<void> _loginUser() async {
     setState(() {
@@ -57,17 +59,34 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (response.statusCode == 200) {
         // Login success
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Login successful"),
-            backgroundColor: Colors.green,
-          ),
-        );
+        final String token = responseData["token"];
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => HomeView()),
-        );
+        // if (token != null) {
+          // Store the token securely using SharedPreferences
+          // pref.SharedPreferences prefs = await pref.SharedPreferences.getInstance();
+          // await prefs.setString('auth_token', token);
+
+          box.write('auth_token', token);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Login successful"),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => HomeView()),
+          );
+        // } else {
+        //   ScaffoldMessenger.of(context).showSnackBar(
+        //     const SnackBar(
+        //       content: Text("Login Failed due to token failure."),
+        //       backgroundColor: Colors.red,
+        //     ),
+        //   );
+        // }
       } else {
         // Display backend error message
         String errorMessage = "An error occurred. Please try again.";
@@ -82,7 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (error) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("An error occurred. Please try again."),
+          content: Text("Please try again."),
           backgroundColor: Colors.red,
         ),
       );

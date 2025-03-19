@@ -1,8 +1,48 @@
+import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:get_storage/get_storage.dart';
 import 'package:babstrap_settings_screen/babstrap_settings_screen.dart';
 
-class Profile extends StatelessWidget {
+class Profile extends StatefulWidget {
+  @override
+  State<Profile> createState() => _ProfileState();
+}
+
+class _ProfileState extends State<Profile> {
+  String userName = "Guest";
+
+  @override
+  void initState() {
+    super.initState();
+    fetchUserData();
+  }
+
+  Future<void> fetchUserData() async {
+    String? storedToken = GetStorage().read('auth_token');
+
+    final String apiUrl = "http://127.0.0.1:3000/users/me";
+    final url = Uri.parse(apiUrl);
+    final response = await http.get(
+      url,
+      headers: {
+        "Authorization": "Bearer $storedToken",
+        "Content-Type": "application/json",
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+      setState(() {
+        userName =
+            jsonResponse['data']['name'];
+      });
+    } else {
+      print("Failed to fetch data: ${response.statusCode}");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -14,7 +54,7 @@ class Profile extends StatelessWidget {
             // User card
             BigUserCard(
               backgroundColor: Colors.red,
-              userName: "Nico Nikx",
+              userName: userName,
               userProfilePic: AssetImage("assets/introduction_animation/introduction_image.png"),
               cardActionWidget: SettingsItem(
                 icons: Icons.edit,
@@ -94,7 +134,7 @@ class Profile extends StatelessWidget {
       ),
     );
   }
-  
+
   void _showSignOutDialog(BuildContext context) {
   showDialog(
     context: context,
@@ -122,5 +162,4 @@ class Profile extends StatelessWidget {
     },
   );
 }
-
 }
