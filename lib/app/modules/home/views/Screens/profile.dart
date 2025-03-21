@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:get_storage/get_storage.dart';
 import 'package:babstrap_settings_screen/babstrap_settings_screen.dart';
+import 'package:smart_recipe_generator_flutter/app/modules/Authenticate/views/authenticate_view.dart';
 
 class Profile extends StatefulWidget {
   @override
@@ -136,30 +137,74 @@ class _ProfileState extends State<Profile> {
   }
 
   void _showSignOutDialog(BuildContext context) {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: Text("Confirm Sign Out"),
-        content: Text("Are you sure you want to sign out?"),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context); // Close the dialog
-            },
-            child: Text("Cancel"),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context); // Close the dialog first
-              // Perform sign-out action here
-              print("User signed out");
-            },
-            child: Text("Yes", style: TextStyle(color: Colors.red)),
-          ),
-        ],
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Confirm Sign Out"),
+          content: Text("Are you sure you want to sign out?"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close the dialog
+              },
+              child: Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context); // Close the dialog first
+                await _logout(context); // Call logout API
+              },
+              child: Text("Yes", style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _logout(BuildContext context) async {
+    String? storedToken = GetStorage().read('auth_token');
+    if (storedToken == null) {
+      print("No token found, redirecting to login...");
+      _navigateToLogin(context);
+      return;
+    }
+
+    final String apiUrl = "http://127.0.0.1:3000/logout";
+    final url = Uri.parse(apiUrl);
+
+    final response = await http.delete(
+      url,
+      headers: {
+        "Authorization": "Bearer $storedToken",
+        "Content-Type": "application/json",
+      },
+    );
+
+    if (response.statusCode == 200) {
+      print("Logout successful");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Logged out successfully"),
+          backgroundColor: Colors.green,
+        ),
       );
-    },
-  );
-}
+
+      // Remove stored token
+      GetStorage().remove('auth_token');
+
+      // Navigate to login screen
+      _navigateToLogin(context);
+    } else {
+      print("Logout failed: ${response.statusCode}");
+    }
+  }
+
+  void _navigateToLogin(BuildContext context) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => AuthenticateView()),
+    );
+  }
 }
