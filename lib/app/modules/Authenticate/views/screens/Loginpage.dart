@@ -36,7 +36,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return; // Stop if there are frontend validation errors
     }
 
-    final String apiUrl = "http://127.0.0.1:3000/login";
+    final String apiUrl = "http://127.0.0.1:4000/login";
     final Map<String, dynamic> loginData = {
       "user": {
         "email": _emailController.text.trim(),
