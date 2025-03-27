@@ -65,7 +65,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     try {
       final response = await http.post(
         Uri.parse(apiUrl),
-        headers: {"Content-Type": "application/json"},
+        headers: {"Content-Type": "application/json", "Accept": "application/json"},
         body: jsonEncode(userData),
       );
 

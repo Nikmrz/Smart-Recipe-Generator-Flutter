@@ -43,6 +43,8 @@ dependencies:
   flutter_native_splash: ^2.4.5
   flutter_timer_countdown: ^1.0.7
   choice: ^2.3.2
+  animated_item_picker: ^2.0.0
+  flutter_card_swiper: ^7.0.2
 
 dev_dependencies:
   flutter_test:
