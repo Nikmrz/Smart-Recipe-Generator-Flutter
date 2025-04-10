@@ -13,14 +13,20 @@ class HomeView extends StatefulWidget {
 
 class HomeScreenState extends State<HomeView> {
   int _selectedIndex = 0; // Track the selected tab
-  PageController _pageController = PageController(initialPage: 0);
+
+  final List<Widget> _screens = [
+    firstTab.Pantry(),
+    secondTab.Home(),
+    thirdTab.Favourite(),
+    fourthTab.Profile(),
+  ];
 
   @override
   Widget build(BuildContext ctx) {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        backgroundColor: Colors.white, // White
+        backgroundColor: Colors.white,
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
@@ -34,19 +40,9 @@ class HomeScreenState extends State<HomeView> {
           ],
         ),
       ),
-      body: PageView(
-        controller: _pageController,
-        onPageChanged: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        children: <Widget>[
-          firstTab.Pantry(),
-          secondTab.Home(),
-          thirdTab.Favourite(),
-          fourthTab.Profile(),
-        ],
+      body: IndexedStack(
+        index: _selectedIndex, // Keeps state of all screens
+        children: _screens,
       ),
       bottomNavigationBar: FlashyTabBar(
         selectedIndex: _selectedIndex,
@@ -54,26 +50,13 @@ class HomeScreenState extends State<HomeView> {
         onItemSelected: (index) {
           setState(() {
             _selectedIndex = index;
-            _pageController.jumpToPage(index); // Navigate to selected tab
           });
         },
         items: [
-          FlashyTabBarItem(
-            icon: Icon(Icons.food_bank),
-            title: Text('Pantry'),
-          ),
-          FlashyTabBarItem(
-            icon: Icon(Icons.home),
-            title: Text('Home'),
-          ),
-          FlashyTabBarItem(
-            icon: Icon(Icons.bookmark),
-            title: Text('Favorites'),
-          ),
-          FlashyTabBarItem(
-            icon: Icon(Icons.account_circle_outlined),
-            title: Text('Profile'),
-          ),
+          FlashyTabBarItem(icon: Icon(Icons.food_bank), title: Text('Pantry')),
+          FlashyTabBarItem(icon: Icon(Icons.home), title: Text('Home')),
+          FlashyTabBarItem(icon: Icon(Icons.bookmark), title: Text('Favorites')),
+          FlashyTabBarItem(icon: Icon(Icons.account_circle_outlined), title: Text('Profile')),
         ],
       ),
       floatingActionButton: FloatingActionButton(
