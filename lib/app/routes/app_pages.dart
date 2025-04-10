@@ -32,10 +32,10 @@ class AppPages {
       page: () => const AuthenticateView(),
       binding: AuthenticateBinding(),
     ),
-    GetPage(
-      name: _Paths.RECIPE_DETAIL,
-      page: () => RecipeDetailView(recipe: Get.arguments),
-      binding: RecipeDetailBinding(),
-    ),
+    // GetPage(
+    //   name: _Paths.RECIPE_DETAIL,
+    //   // page: () => RecipeDetailView(recipe: Get.arguments),
+    //   binding: RecipeDetailBinding(),
+    // ),
   ];
 }

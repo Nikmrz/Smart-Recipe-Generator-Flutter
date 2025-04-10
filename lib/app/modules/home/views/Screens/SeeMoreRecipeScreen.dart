@@ -12,15 +12,27 @@ class SeeMoreRecipesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      appBar: AppBar(title: Text('Recipes')),
       body: ListView.builder(
         itemCount: recipes.length,
         itemBuilder: (context, index) {
           final recipe = recipes[index];
           return ListTile(
-            leading: Image.network(recipe.imageUrl, width: 60, fit: BoxFit.cover),
+            leading: Image.network(
+              recipe.imageUrl,
+              width: 60,
+              height: 60,
+              fit: BoxFit.cover,
+              errorBuilder:
+                  (context, error, stackTrace) =>
+                      const Icon(Icons.image_not_supported),
+            ),
             title: Text(recipe.name),
-            subtitle: Text('${recipe.cookTime} min'),
+            subtitle: Text(
+              '${recipe.cleanedIngredients.length} ingredients',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
             onTap: () => Get.to(() => RecipeDetailView(recipe: recipe)),
           );
         },

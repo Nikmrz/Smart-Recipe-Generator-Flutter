@@ -1,25 +1,33 @@
+import 'package:smart_recipe_generator_flutter/app/models/ingredient.dart';
+
 class Recipe {
+  final String id;
   final String name;
   final String imageUrl;
-  final int cookTime;
-  final List<String> ingredients;
-  final List<String> steps;
+  final List<String> instructions;
+  final List<String> cleanedIngredients;
+  final List<Ingredient> ingredients;
 
   Recipe({
+    required this.id,
     required this.name,
     required this.imageUrl,
-    required this.cookTime,
+    required this.instructions,
+    required this.cleanedIngredients,
     required this.ingredients,
-    required this.steps,
   });
 
   factory Recipe.fromJson(Map<String, dynamic> json) {
     return Recipe(
+      id: json['id'].toString(),
       name: json['title'],
       imageUrl: json['picture_url'],
-      cookTime: json['cook_time'] ?? 0,  // Default value in case `cook_time` is missing
-      ingredients: List<String>.from(json['ingredients']),
-      steps: List<String>.from(json['instructions']),
+      instructions: List<String>.from(json['instructions'] ?? []),
+      cleanedIngredients: List<String>.from(json['cleaned_ingredients'] ?? []),
+      ingredients:
+          (json['ingredients'] as List)
+              .map((e) => Ingredient.fromJson(e))
+              .toList(),
     );
   }
 }

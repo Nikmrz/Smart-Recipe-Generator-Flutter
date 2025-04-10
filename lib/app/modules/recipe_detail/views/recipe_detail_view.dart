@@ -53,17 +53,17 @@ class RecipeDetailView extends StatelessWidget {
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
-              children: recipe.ingredients.map((ingredient) {
-                bool inPantry = ingredient.toLowerCase().contains('rice') || ingredient.toLowerCase().contains('chicken');
-                return Chip(
-                  label: Text(ingredient),
-                  backgroundColor: inPantry ? Colors.green[100] : Colors.red[100],
-                  avatar: Icon(
-                    inPantry ? Icons.check_circle : Icons.cancel,
-                    color: inPantry ? Colors.green : Colors.red,
-                  ),
-                );
-              }).toList(),
+              // children: recipe.ingredients.map((ingredient) {
+              //   bool inPantry = ingredient.contains('rice') || ingredient.toLowerCase().contains('chicken');
+              //   return Chip(
+              //     label: Text(ingredient),
+              //     backgroundColor: inPantry ? Colors.green[100] : Colors.red[100],
+              //     avatar: Icon(
+              //       inPantry ? Icons.check_circle : Icons.cancel,
+              //       color: inPantry ? Colors.green : Colors.red,
+              //     ),
+              //   );
+              // }).toList(),
             ),
             const SizedBox(height: 20),
 
@@ -72,18 +72,18 @@ class RecipeDetailView extends StatelessWidget {
             const SizedBox(height: 8),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: recipe.steps.asMap().entries.map((entry) {
-                int stepNumber = entry.key + 1;
-                String step = entry.value;
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Text("$stepNumber. $step", style: const TextStyle(fontSize: 14)),
-                );
-              }).toList(),
+              // children: recipe.steps.asMap().entries.map((entry) {
+              //   int stepNumber = entry.key + 1;
+              //   String step = entry.value;
+              //   return Padding(
+              //     padding: const EdgeInsets.symmetric(vertical: 4),
+              //     child: Text("$stepNumber. $step", style: const TextStyle(fontSize: 14)),
+              //   );
+              // }).toList(),
             ),
 
             const SizedBox(height: 20),
-            Text("Time: ${recipe.cookTime} minutes"),
+            // Text("Time: ${recipe.cookTime} minutes"),
 
             const SizedBox(height: 24),
             ElevatedButton(
