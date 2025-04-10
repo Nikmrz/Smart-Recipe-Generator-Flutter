@@ -22,35 +22,30 @@ class _HomeState extends State<Home> {
   final TextEditingController _ingredientController = TextEditingController();
 
   // Method to fetch recipe data
-  Future<void> _fetchRecipes() async {
-    setState(() {
-      isLoading = true;
-    });
-
-    final response = await http.get(Uri.parse('http://localhost:4000/recipes?limit=10&offset=10'));
+  Future<List<Recipe>> fetchRecipes({int limit = 10, int offset = 0}) async {
+    final url = Uri.parse(
+      'http://localhost:4000/recipes?limit=$limit&offset=$offset',
+    );
+    final response = await http.get(url);
 
     if (response.statusCode == 200) {
-      // Parse the JSON response into a list of recipes
-      List<dynamic> recipeData = json.decode(response.body);
-
-      setState(() {
-        allRecipes = recipeData.map((data) => Recipe.fromJson(data)).toList();
-        isLoading = false;
-      });
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((item) => Recipe.fromJson(item)).toList();
     } else {
-      // Handle error
-      setState(() {
-        isLoading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load recipes')));
+      throw Exception('Failed to fetch recipes');
     }
   }
 
   @override
   void initState() {
     super.initState();
-    _fetchRecipes(); // Call the fetch method when the page loads
+    fetchRecipes(limit: 10, offset: 10).then((recipes) {
+      setState(() {
+        allRecipes = recipes;
+      });
+    });
   }
+
 
   void _addIngredient() {
     if (_ingredientController.text.isNotEmpty) {
@@ -129,10 +124,10 @@ class _HomeState extends State<Home> {
                     children: [
                       Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
                       SizedBox(width: 4),
-                      Text(
-                        '${recipe.cookTime} min',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                      ),
+                      // Text(
+                      //   '${recipe.cookTime} min',
+                      //   style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      // ),
                     ],
                   ),
                 ],
