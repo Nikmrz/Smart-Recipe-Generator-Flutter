@@ -9,8 +9,11 @@ class Pantry extends StatefulWidget {
 
 class _PantryViewState extends State<Pantry> {
   List<String> ingredients = [];
-  List<String> selectedItems = [];
   List<List<String>> groupedIngredients = [];
+  List<bool> isExpanded = [];
+
+  List<String> selectedItems = [];
+  List<String> myPantryItems = [];
 
   @override
   void initState() {
@@ -19,37 +22,25 @@ class _PantryViewState extends State<Pantry> {
   }
 
   Future<void> fetchIngredients() async {
-    final url = Uri.parse(
-      'http://localhost:4000/ingredients?limit=100&offset=100',
-    );
+    final url = Uri.parse('http://localhost:4000/ingredients'); // no limit
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
       setState(() {
         ingredients = data.map((item) => item.toString()).toList();
-        // Group the ingredients into categories (30/40 ingredients per category)
-        groupedIngredients = _groupIngredients(ingredients, 40);
+        groupedIngredients = _groupIngredients(ingredients, 20);
+        isExpanded = List.generate(groupedIngredients.length, (_) => false);
       });
     } else {
       throw Exception('Failed to fetch ingredients');
     }
   }
 
-  List<List<String>> _groupIngredients(
-    List<String> ingredients,
-    int groupSize,
-  ) {
+  List<List<String>> _groupIngredients(List<String> list, int groupSize) {
     List<List<String>> grouped = [];
-    for (int i = 0; i < ingredients.length; i += groupSize) {
-      grouped.add(
-        ingredients.sublist(
-          i,
-          i + groupSize > ingredients.length
-              ? ingredients.length
-              : i + groupSize,
-        ),
-      );
+    for (int i = 0; i < list.length; i += groupSize) {
+      grouped.add(list.sublist(i, i + groupSize > list.length ? list.length : i + groupSize));
     }
     return grouped;
   }
@@ -64,84 +55,164 @@ class _PantryViewState extends State<Pantry> {
     });
   }
 
+  void confirmPantryAddition() {
+    setState(() {
+      myPantryItems.addAll(
+        selectedItems.where((item) => !myPantryItems.contains(item)),
+      );
+      selectedItems.clear();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text("Pantry")),
-      body:
-          groupedIngredients.isEmpty
-              ? Center(child: CircularProgressIndicator())
-              : Column(
-                children: [
-                  // Display selected items as Chips
-                  if (selectedItems.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.all(10.0),
-                      child: Wrap(
-                        spacing: 8,
-                        children:
-                            selectedItems.map((item) {
-                              return Chip(
-                                label: Text(item),
-                                backgroundColor: Colors.lightBlueAccent,
-                                deleteIcon: Icon(Icons.close, size: 18),
-                                onDeleted: () => toggleSelection(item),
-                              );
-                            }).toList(),
-                      ),
-                    ),
-                  // List of grouped ingredients
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: groupedIngredients.length,
-                      itemBuilder: (context, index) {
-                        final category = 'Category ${index + 1}';
-                        final ingredientsInCategory = groupedIngredients[index];
+      body: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 70), // for fixed bottom bar
+            child: groupedIngredients.isEmpty
+                ? Center(child: CircularProgressIndicator())
+                : ListView.builder(
+                    itemCount: groupedIngredients.length,
+                    itemBuilder: (context, index) {
+                      final category = 'Category ${index + 1}';
+                      final ingredientsInCategory = groupedIngredients[index];
+                      final isSectionExpanded = isExpanded[index];
 
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Category Title
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 10,
-                              ),
-                              child: Text(
-                                category,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            // List of ingredients in this category
-                            Wrap(
-                              spacing: 10,
-                              runSpacing: 10,
-                              children:
-                                  ingredientsInCategory.map((ingredient) {
-                                    return ChoiceChip(
-                                      selected: selectedItems.contains(
-                                        ingredient,
-                                      ),
-                                      onSelected: (selected) {
-                                        toggleSelection(ingredient);
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        child: Card(
+                          elevation: 3,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      category,
+                                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                    ),
+                                    IconButton(
+                                      icon: Icon(isSectionExpanded
+                                          ? Icons.expand_less
+                                          : Icons.expand_more),
+                                      onPressed: () {
+                                        setState(() {
+                                          isExpanded[index] = !isExpanded[index];
+                                        });
                                       },
-                                      label: Text(ingredient),
-                                    );
-                                  }).toList(),
+                                    ),
+                                  ],
+                                ),
+                                AnimatedCrossFade(
+                                  duration: Duration(milliseconds: 300),
+                                  crossFadeState: isSectionExpanded
+                                      ? CrossFadeState.showFirst
+                                      : CrossFadeState.showSecond,
+                                  firstChild: Wrap(
+                                    spacing: 8,
+                                    runSpacing: 10,
+                                    children: ingredientsInCategory.map((ingredient) {
+                                      return ChoiceChip(
+                                        label: Text(ingredient),
+                                        selected: selectedItems.contains(ingredient),
+                                        onSelected: (_) => toggleSelection(ingredient),
+                                      );
+                                    }).toList(),
+                                  ),
+                                  secondChild: Wrap(
+                                    spacing: 8,
+                                    runSpacing: 10,
+                                    children: ingredientsInCategory
+                                        .take(8)
+                                        .map((ingredient) {
+                                      return ChoiceChip(
+                                        label: Text(ingredient),
+                                        selected: selectedItems.contains(ingredient),
+                                        onSelected: (_) => toggleSelection(ingredient),
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
+                              ],
                             ),
-                            SizedBox(
-                              height: 10,
-                            ), // Add spacing between categories
-                          ],
-                        );
-                      },
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+
+          // Floating "Add to Pantry" button
+          if (selectedItems.isNotEmpty)
+            Positioned(
+              bottom: 80, // just above bottom bar
+              left: 0,
+              right: 0,
+              child: Center(
+                child: ElevatedButton(
+                  onPressed: confirmPantryAddition,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  child: Text("Add to Pantry"),
+                ),
+              ),
+            ),
+
+          // Fixed Bottom Bar
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              color: Colors.white,
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // My Pantry
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/myPantry'); // adjust as needed
+                    },
+                    icon: Icon(Icons.kitchen),
+                    label: Text("My Pantry (${myPantryItems.length})"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.teal,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                  ),
+
+                  // See Recipe
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/seeRecipe'); // adjust as needed
+                    },
+                    child: Text("See Recipe"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepOrange,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                     ),
                   ),
                 ],
               ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
