@@ -33,7 +33,7 @@ class HomeScreenState extends State<HomeView> {
           children: [
             Text("Smart Chef    "),
             Image(
-              image: AssetImage('../assets/icons/applogo.png'),
+              image: AssetImage('./assets/icons/applogo.png'),
               fit: BoxFit.contain,
               height: 35,
             ),
