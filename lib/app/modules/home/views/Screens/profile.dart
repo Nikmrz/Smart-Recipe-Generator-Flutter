@@ -23,7 +23,7 @@ class _ProfileState extends State<Profile> {
   Future<void> fetchUserData() async {
     String? storedToken = GetStorage().read('auth_token');
 
-    final String apiUrl = "http://127.0.0.1:3000/users/me";
+    final String apiUrl = "http://127.0.0.1:4000/users/me";
     final url = Uri.parse(apiUrl);
     final response = await http.get(
       url,
@@ -171,7 +171,7 @@ class _ProfileState extends State<Profile> {
       return;
     }
 
-    final String apiUrl = "http://127.0.0.1:3000/logout";
+    final String apiUrl = "http://127.0.0.1:4000/logout";
     final url = Uri.parse(apiUrl);
 
     final response = await http.delete(
