@@ -12,7 +12,7 @@ class HomeView extends StatefulWidget {
 }
 
 class HomeScreenState extends State<HomeView> {
-  int _selectedIndex = 0; // Track the selected tab
+  int _selectedIndex = 1; // Track the selected tab
 
   final List<Widget> _screens = [
     firstTab.Pantry(),
