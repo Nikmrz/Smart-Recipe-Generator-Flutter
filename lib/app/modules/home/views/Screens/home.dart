@@ -6,8 +6,7 @@ import 'package:smart_recipe_generator_flutter/app/modules/home/views/Screens/Se
 import 'package:smart_recipe_generator_flutter/app/modules/recipe_detail/views/recipe_detail_view.dart';
 import 'package:http/http.dart' as http;
 
-// Dummy Login Check
-bool isLoggedIn = true; // Toggle this to test UI
+bool isLoggedIn = true;
 
 List<Recipe> allRecipes = [];
 bool isLoading = false;
@@ -21,7 +20,19 @@ class _HomeState extends State<Home> {
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _ingredientController = TextEditingController();
 
-  // Method to fetch recipe data
+  // Simulate pantry ingredients list
+  List<String> pantryIngredients = [];
+
+  @override
+  void initState() {
+    super.initState();
+    fetchRecipes(limit: 10, offset: 10).then((recipes) {
+      setState(() {
+        allRecipes = recipes;
+      });
+    });
+  }
+
   Future<List<Recipe>> fetchRecipes({int limit = 10, int offset = 0}) async {
     final url = Uri.parse(
       'http://localhost:4000/recipes?limit=$limit&offset=$offset',
@@ -36,19 +47,11 @@ class _HomeState extends State<Home> {
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    fetchRecipes(limit: 10, offset: 10).then((recipes) {
-      setState(() {
-        allRecipes = recipes;
-      });
-    });
-  }
-
-
   void _addIngredient() {
     if (_ingredientController.text.isNotEmpty) {
+      setState(() {
+        pantryIngredients.add(_ingredientController.text.trim());
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Added ${_ingredientController.text} to pantry'),
@@ -123,11 +126,6 @@ class _HomeState extends State<Home> {
                   Row(
                     children: [
                       Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
-                      SizedBox(width: 4),
-                      // Text(
-                      //   '${recipe.cookTime} min',
-                      //   style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                      // ),
                     ],
                   ),
                 ],
@@ -178,12 +176,44 @@ class _HomeState extends State<Home> {
     );
   }
 
+  Widget _buildPossibleRecipeBanner() {
+    return pantryIngredients.isNotEmpty
+        ? Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: GestureDetector(
+              onTap: () {
+                Navigator.pushNamed(context, '/possibleRecipes');
+              },
+              child: Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.green[100],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.green),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        "You can make recipes using ${pantryIngredients.length} ingredient(s) in your pantry.",
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          )
+        : SizedBox.shrink();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
         child: isLoading
-            ? Center(child: CircularProgressIndicator()) // Show loading indicator
+            ? Center(child: CircularProgressIndicator())
             : SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -257,9 +287,10 @@ class _HomeState extends State<Home> {
                       ),
                     ),
 
-                    if (isLoggedIn) ...[
-                      _buildRecipeSection('Based on Your Past Preferences', allRecipes), // You can replace this section as needed
-                    ],
+                    // 🧾 Show possible recipes banner if pantry has items
+                    _buildPossibleRecipeBanner(),
+
+                    if (isLoggedIn) _buildRecipeSection('Based on Your Past Preferences', allRecipes),
                     _buildRecipeSection('Discover Recipes', allRecipes),
                     SizedBox(height: 24),
                   ],
