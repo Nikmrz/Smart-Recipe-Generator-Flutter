@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:babstrap_settings_screen/babstrap_settings_screen.dart';
 import 'package:smart_recipe_generator_flutter/app/modules/Authenticate/views/authenticate_view.dart';
@@ -13,6 +14,7 @@ class Profile extends StatefulWidget {
 
 class _ProfileState extends State<Profile> {
   String userName = "Guest";
+  final box = GetStorage();
 
   @override
   void initState() {
@@ -36,8 +38,7 @@ class _ProfileState extends State<Profile> {
     if (response.statusCode == 200) {
       final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
       setState(() {
-        userName =
-            jsonResponse['data']['name'];
+        userName = jsonResponse['data']['name'];
       });
     } else {
       print("Failed to fetch data: ${response.statusCode}");
@@ -46,15 +47,16 @@ class _ProfileState extends State<Profile> {
 
   @override
   Widget build(BuildContext context) {
+    bool isDarkMode = box.read('isDarkMode') ?? false;
+
     return Scaffold(
-     
       body: Padding(
         padding: const EdgeInsets.all(10),
         child: ListView(
           children: [
             // User card
             BigUserCard(
-              backgroundColor: Colors.red,
+              backgroundColor: Colors.grey[200]!, // Light grey
               userName: userName,
               userProfilePic: AssetImage("assets/introduction_animation/introduction_image.png"),
               cardActionWidget: SettingsItem(
@@ -67,55 +69,58 @@ class _ProfileState extends State<Profile> {
                 title: "Modify",
                 subtitle: "Tap to change your data",
                 onTap: () {
-                  print("OK");
+                  print("Modify tapped");
                 },
               ),
             ),
+
             SettingsGroup(
-              backgroundColor: Colors.blue,
+              backgroundColor: Colors.grey[200]!, // Light grey
               items: [
+                
                 SettingsItem(
-                  onTap: () {},
-                  icons: CupertinoIcons.pencil_outline,
-                  iconStyle: IconStyle(),
-                  title: 'Appearance',
-                  subtitle: "Make Smart Chef App yours",
-                ),
-                SettingsItem(
-                  onTap: () {},
+                  onTap: () {
+                    setState(() {
+                      isDarkMode = !isDarkMode;
+                      box.write('isDarkMode', isDarkMode);
+                      Get.changeThemeMode(isDarkMode ? ThemeMode.dark : ThemeMode.light);
+                    });
+                  },
                   icons: Icons.dark_mode_rounded,
                   iconStyle: IconStyle(
                     iconsColor: Colors.white,
                     withBackground: true,
-                    backgroundColor: Colors.red,
+                    backgroundColor: Colors.black,
                   ),
                   title: 'Dark mode',
-                  subtitle: "Automatic",
+                  subtitle: isDarkMode ? "On" : "Off",
                   trailing: Switch.adaptive(
-                    value: false,
-                    onChanged: (value) {},
+                    value: isDarkMode,
+                    onChanged: (value) {
+                      setState(() {
+                        isDarkMode = value;
+                        box.write('isDarkMode', value);
+                        Get.changeThemeMode(value ? ThemeMode.dark : ThemeMode.light);
+                      });
+                    },
                   ),
                 ),
-                  SettingsItem(
-                  onTap: () {},
+                SettingsItem(
+                  onTap: () => _showAboutDialog(context),
                   icons: Icons.info_rounded,
-                  iconStyle: IconStyle(
-                    backgroundColor: Colors.purple,
-                  ),
+                  iconStyle: IconStyle(backgroundColor: Colors.purple),
                   title: 'About',
                   subtitle: "Learn more about Smart Chef App",
                 ),
-
               ],
             ),
-           
+
             SettingsGroup(
               settingsGroupTitle: "Account",
+              backgroundColor: Colors.grey[200]!, // Light grey
               items: [
-               SettingsItem(
-                onTap: () {
-                _showSignOutDialog(context);
-                      },
+                SettingsItem(
+                  onTap: () => _showSignOutDialog(context),
                   icons: Icons.exit_to_app_rounded,
                   title: "Sign Out",
                 ),
@@ -145,15 +150,13 @@ class _ProfileState extends State<Profile> {
           content: Text("Are you sure you want to sign out?"),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Close the dialog
-              },
+              onPressed: () => Navigator.pop(context),
               child: Text("Cancel"),
             ),
             TextButton(
               onPressed: () async {
-                Navigator.pop(context); // Close the dialog first
-                await _logout(context); // Call logout API
+                Navigator.pop(context);
+                await _logout(context);
               },
               child: Text("Yes", style: TextStyle(color: Colors.red)),
             ),
@@ -171,8 +174,7 @@ class _ProfileState extends State<Profile> {
       return;
     }
 
-    final String apiUrl = "http://127.0.0.1:4000/logout";
-    final url = Uri.parse(apiUrl);
+    final url = Uri.parse("http://127.0.0.1:4000/logout");
 
     final response = await http.delete(
       url,
@@ -190,11 +192,7 @@ class _ProfileState extends State<Profile> {
           backgroundColor: Colors.green,
         ),
       );
-
-      // Remove stored token
       GetStorage().remove('auth_token');
-
-      // Navigate to login screen
       _navigateToLogin(context);
     } else {
       print("Logout failed: ${response.statusCode}");
@@ -205,6 +203,27 @@ class _ProfileState extends State<Profile> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => AuthenticateView()),
+    );
+  }
+
+  void _showAboutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("About Smart Chef"),
+        content: const Text(
+          "Smart Chef is an intelligent recipe suggestion app.\n\n"
+          "It helps you find recipes based on what you already have in your pantry, "
+          "helps reduce food waste, and improves your cooking experience with smart suggestions."
+          "B & N 6th Sem Project",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text("Close"),
+          ),
+        ],
+      ),
     );
   }
 }
