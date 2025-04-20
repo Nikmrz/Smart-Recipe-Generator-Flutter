@@ -41,12 +41,12 @@ class FullRecipeView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Recipe image
-              if (recipe.pictureUrl != null)
+              if (recipe.imageUrl != null)
                 SizedBox(
                   height: 200,
                   width: double.infinity,
                   child: Image.network(
-                    recipe.pictureUrl!,
+                    recipe.imageUrl!,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
@@ -67,7 +67,7 @@ class FullRecipeView extends StatelessWidget {
               const SizedBox(height: 16),
 
               Text(
-                recipe.title,
+                recipe.name,
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,

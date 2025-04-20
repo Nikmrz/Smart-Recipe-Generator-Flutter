@@ -42,6 +42,7 @@ class SeeRecipeView extends GetView<SeeRecipeController> {
                   ),
                   Expanded(
                     child: ListView.builder(
+                      controller: controller.scrollController,
                       padding: const EdgeInsets.all(16),
                       itemCount: controller.recipes.length,
                       itemBuilder: (context, index) {
@@ -74,9 +75,9 @@ class SeeRecipeView extends GetView<SeeRecipeController> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: recipe.pictureUrl != null
+                  child: recipe.imageUrl != null
                       ? Image.network(
-                          recipe.pictureUrl!,
+                          recipe.imageUrl!,
                           height: 100,
                           width: 100,
                           fit: BoxFit.cover,
@@ -102,7 +103,7 @@ class SeeRecipeView extends GetView<SeeRecipeController> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        recipe.title,
+                        recipe.name,
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
