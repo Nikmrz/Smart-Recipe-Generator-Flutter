@@ -1,23 +1,36 @@
 import 'package:get/get.dart';
 
 class MyPantryController extends GetxController {
-  //TODO: Implement MyPantryController
+  var myPantryItems = <String>[].obs;
 
-  final count = 0.obs;
   @override
   void onInit() {
     super.onInit();
+    fetchPantryItems(); // Simulate backend fetch
   }
 
-  @override
-  void onReady() {
-    super.onReady();
+  var favoriteItems = <String>[].obs;
+
+  void toggleFavorite(String item) {
+    if (favoriteItems.contains(item)) {
+      favoriteItems.remove(item);
+    } else {
+      favoriteItems.add(item);
+    }
   }
 
-  @override
-  void onClose() {
-    super.onClose();
+  void fetchPantryItems() {
+    // Replace with real backend fetch
+    myPantryItems.assignAll(['Tomato', 'Onion', 'Garlic']);
+  }
+  void addToShoppingList(String item) {
+  // TODO: send to backend or update list
+    print('Added "$item" to shopping list');
+  // You can add logic to update a local shoppingList RxList too if needed
   }
 
-  void increment() => count.value++;
+  void removeItem(String item) {
+    myPantryItems.remove(item);
+    // TODO: Call backend to delete
+  }
 }
