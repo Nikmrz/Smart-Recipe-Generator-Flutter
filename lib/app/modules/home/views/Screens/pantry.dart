@@ -8,6 +8,14 @@ class Pantry extends StatefulWidget {
 }
 
 class _PantryViewState extends State<Pantry> {
+  int currentPage = 1;
+  final int pageSize = 100;
+
+  bool isLoading = false;
+  bool hasMore = true;
+
+  ScrollController _scrollController = ScrollController();
+
   List<String> ingredients = [];
   List<List<String>> groupedIngredients = [];
   List<bool> isExpanded = [];
@@ -19,22 +27,54 @@ class _PantryViewState extends State<Pantry> {
   void initState() {
     super.initState();
     fetchIngredients();
+
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >=
+              _scrollController.position.maxScrollExtent - 200 &&
+          !isLoading &&
+          hasMore) {
+        currentPage++;
+        fetchIngredients();
+      }
+    });
   }
 
   Future<void> fetchIngredients() async {
-    final url = Uri.parse('http://localhost:4000/ingredients'); // no limit
+    if (isLoading || !hasMore) return;
+
+    setState(() => isLoading = true);
+
+    // Calculate the offset based on the current page
+    final offset = (currentPage - 1) * pageSize;
+
+    // Update the API URL to use limit and offset
+    final url = Uri.parse(
+      'http://localhost:4000/ingredients?limit=$pageSize&offset=$offset',
+    );
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
+
+      if (data.isEmpty || data.length < pageSize) {
+        hasMore = false;
+      }
+
+      final newIngredients = data.map((item) => item.toString()).toList();
+
       setState(() {
-        ingredients = data.map((item) => item.toString()).toList();
-        groupedIngredients = _groupIngredients(ingredients, 20);
+        ingredients.addAll(newIngredients);
+        groupedIngredients = _groupIngredients(
+          ingredients,
+          20,
+        ); // still group in 20s for UI
         isExpanded = List.generate(groupedIngredients.length, (_) => false);
       });
     } else {
       throw Exception('Failed to fetch ingredients');
     }
+
+    setState(() => isLoading = false);
   }
 
   List<List<String>> _groupIngredients(List<String> list, int groupSize) {
@@ -75,6 +115,7 @@ class _PantryViewState extends State<Pantry> {
             child: groupedIngredients.isEmpty
                 ? Center(child: CircularProgressIndicator())
                 : ListView.builder(
+                    controller: _scrollController,
                     itemCount: groupedIngredients.length,
                     itemBuilder: (context, index) {
                       final category = 'Category ${index + 1}';
@@ -147,7 +188,13 @@ class _PantryViewState extends State<Pantry> {
                       );
                     },
                   ),
+                  
           ),
+          if (isLoading && hasMore)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Center(child: CircularProgressIndicator()),
+            ),
 
           // Floating "Add to Pantry" button
           if (selectedItems.isNotEmpty)
