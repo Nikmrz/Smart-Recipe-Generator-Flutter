@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:smart_recipe_generator_flutter/app/routes/app_pages.dart';
 
 class Pantry extends StatefulWidget {
   @override
@@ -15,7 +17,7 @@ class _PantryViewState extends State<Pantry> {
   List<String> selectedItems = [];
   List<String> myPantryItems = [];
 
-  @override
+  @override 
   void initState() {
     super.initState();
     fetchIngredients();
@@ -184,7 +186,7 @@ class _PantryViewState extends State<Pantry> {
                   // My Pantry
                   ElevatedButton.icon(
                     onPressed: () {
-                      Navigator.pushNamed(context, '/myPantry'); // adjust as needed
+                    Get.toNamed(Routes.MY_PANTRY);// Navigate to My Pantry view
                     },
                     icon: Icon(Icons.kitchen),
                     label: Text("My Pantry (${myPantryItems.length})"),
@@ -198,7 +200,8 @@ class _PantryViewState extends State<Pantry> {
                   // See Recipe
                   ElevatedButton(
                     onPressed: () {
-                      Navigator.pushNamed(context, '/seeRecipe'); // adjust as needed
+                      Get.toNamed(Routes.SEE_RECIPE);
+ // adjust as needed
                     },
                     child: Text("See Recipe"),
                     style: ElevatedButton.styleFrom(
