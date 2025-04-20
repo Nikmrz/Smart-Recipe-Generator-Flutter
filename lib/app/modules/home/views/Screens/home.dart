@@ -10,7 +10,7 @@ bool isLoggedIn = true;
 
 List<Recipe> allRecipes = [];
 bool isLoading = false;
-
+ 
 class Home extends StatefulWidget {
   @override
   _HomeState createState() => _HomeState();

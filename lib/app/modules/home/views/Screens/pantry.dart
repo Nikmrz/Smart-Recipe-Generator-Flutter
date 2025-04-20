@@ -200,8 +200,7 @@ class _PantryViewState extends State<Pantry> {
                   // See Recipe
                   ElevatedButton(
                     onPressed: () {
-                      Get.toNamed(Routes.HOME);
- // adjust as needed
+                      Get.toNamed(Routes.SEE_RECIPE); // adjust as needed
                     },
                     child: Text("See Recipe"),
                     style: ElevatedButton.styleFrom(
