@@ -56,7 +56,7 @@ class _ProfileState extends State<Profile> {
           children: [
             // User card
             BigUserCard(
-              backgroundColor: Colors.grey[200]!, // Light grey
+              backgroundColor: const Color.fromARGB(255, 110, 110, 110)!, // Light grey
               userName: userName,
               userProfilePic: AssetImage("assets/introduction_animation/introduction_image.png"),
               cardActionWidget: SettingsItem(
