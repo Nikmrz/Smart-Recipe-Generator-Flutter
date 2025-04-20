@@ -48,10 +48,7 @@ class MyPantryView extends GetView<MyPantryController> {
               ),
               elevation: 3,
               child: ListTile(
-                title: Text(
-                  item,
-                  style: const TextStyle(fontSize: 16),
-                ),
+                title: Text(item['name'], style: const TextStyle(fontSize: 16)),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -85,68 +82,75 @@ class MyPantryView extends GetView<MyPantryController> {
       }),
     );
   }
-}
 
-void _showDeleteConfirmation(BuildContext context, String item) {
-  final controller = Get.find<MyPantryController>();
+  void _showDeleteConfirmation(
+    BuildContext context,
+    Map<String, dynamic> item,
+  ) {
+    final controller = Get.find<MyPantryController>();
 
-  showDialog(
-    context: context,
-    barrierDismissible: true,
-    builder: (context) => AlertDialog(
-      title: const Text('Delete Ingredient'),
-      content: Text('Are you sure you want to delete "$item" from your pantry?'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            controller.removeItem(item);
-            Navigator.of(context).pop();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('"$item" removed from pantry')),
-            );
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.red,
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Delete Ingredient'),
+            content: Text(
+              'Are you sure you want to delete "${item['name']}" from your pantry?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  controller.removeItem(item);
+                  Navigator.of(context).pop();
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                child: const Text('Delete'),
+              ),
+            ],
           ),
-          child: const Text('Delete'),
-        ),
-      ],
-    ),
-  );
-}
+    );
+  }
 
-void _showShoppingConfirmation(BuildContext context, String item) {
-  final controller = Get.find<MyPantryController>();
+  void _showShoppingConfirmation(
+    BuildContext context,
+    Map<String, dynamic> item,
+  ) {
+    final controller = Get.find<MyPantryController>();
 
-  showDialog(
-    context: context,
-    barrierDismissible: true,
-    builder: (context) => AlertDialog(
-      title: const Text('Add to Shopping List'),
-      content: Text('Are you sure you want to add "$item" to your Shopping List?'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            controller.addToShoppingList(item);
-            Navigator.of(context).pop();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('"$item" added to Shopping List')),
-            );
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.green,
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Add to Shopping List'),
+            content: Text(
+              'Are you sure you want to add "${item['name']}" to your Shopping List?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  controller.addToShoppingList(item);
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('"${item['name']}" added to Shopping List'),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                child: const Text('Add'),
+              ),
+            ],
           ),
-          child: const Text('Add'),
-        ),
-      ],
-    ),
-  );
+    );
+  }
 }

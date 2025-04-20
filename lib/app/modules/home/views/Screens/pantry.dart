@@ -308,7 +308,7 @@ class _PantryViewState extends State<Pantry> {
                     Get.toNamed(Routes.MY_PANTRY);// Navigate to My Pantry view
                     },
                     icon: Icon(Icons.kitchen),
-                    label: Text("My Pantry (${myPantryItems.length})"),
+                    label: Text("My Pantry"),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.teal,
                       foregroundColor: Colors.white,
