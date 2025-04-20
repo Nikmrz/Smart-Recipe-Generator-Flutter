@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:smart_recipe_generator_flutter/app/routes/app_pages.dart';
@@ -18,12 +19,15 @@ class _PantryViewState extends State<Pantry> {
 
   ScrollController _scrollController = ScrollController();
 
-  List<String> ingredients = [];
-  List<List<String>> groupedIngredients = [];
+  List<Map<String, dynamic>> ingredients =
+      []; // Store ingredients as {id, name}
+  List<List<Map<String, dynamic>>> groupedIngredients = [];
   List<bool> isExpanded = [];
 
   List<String> selectedItems = [];
   List<String> myPantryItems = [];
+
+  String? storedToken = GetStorage().read('auth_token');
 
   @override 
   void initState() {
@@ -62,14 +66,15 @@ class _PantryViewState extends State<Pantry> {
         hasMore = false;
       }
 
-      final newIngredients = data.map((item) => item.toString()).toList();
+      // Convert the response to a list of ingredient objects
+      final newIngredients =
+          data.map<Map<String, dynamic>>((item) {
+            return {'id': item['id'], 'name': item['name']};
+          }).toList();
 
       setState(() {
         ingredients.addAll(newIngredients);
-        groupedIngredients = _groupIngredients(
-          ingredients,
-          20,
-        ); // still group in 20s for UI
+        groupedIngredients = _groupIngredients(ingredients, 20);
         isExpanded = List.generate(groupedIngredients.length, (_) => false);
       });
     } else {
@@ -79,10 +84,18 @@ class _PantryViewState extends State<Pantry> {
     setState(() => isLoading = false);
   }
 
-  List<List<String>> _groupIngredients(List<String> list, int groupSize) {
-    List<List<String>> grouped = [];
+  List<List<Map<String, dynamic>>> _groupIngredients(
+    List<Map<String, dynamic>> list,
+    int groupSize,
+  ) {
+    List<List<Map<String, dynamic>>> grouped = [];
     for (int i = 0; i < list.length; i += groupSize) {
-      grouped.add(list.sublist(i, i + groupSize > list.length ? list.length : i + groupSize));
+      grouped.add(
+        list.sublist(
+          i,
+          i + groupSize > list.length ? list.length : i + groupSize,
+        ),
+      );
     }
     return grouped;
   }
@@ -97,13 +110,45 @@ class _PantryViewState extends State<Pantry> {
     });
   }
 
-  void confirmPantryAddition() {
-    setState(() {
-      myPantryItems.addAll(
-        selectedItems.where((item) => !myPantryItems.contains(item)),
+  void confirmPantryAddition() async {
+    // Find ingredient IDs based on the selected ingredient names
+    final selectedIngredientIds =
+        ingredients
+            .where((ingredient) => selectedItems.contains(ingredient['name']))
+            .map<int>((ingredient) => ingredient['id'])
+            .toList();
+
+    if (selectedIngredientIds.isNotEmpty) {
+      // Prepare the request body
+      final body = jsonEncode({'ingredient_ids': selectedIngredientIds});
+
+      // Send the request to the pantry API
+      final response = await http.post(
+        Uri.parse('http://localhost:4000/pantry_ingredients'),
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $storedToken'},
+        body: body,
       );
-      selectedItems.clear();
-    });
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final pantryData = jsonDecode(response.body);
+
+        // Optionally update the UI with the response from the pantry API
+        setState(() {
+          myPantryItems.addAll(selectedItems);
+          selectedItems.clear(); // Clear selected items after adding
+        });
+
+        // Show a success message
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(pantryData['message']),backgroundColor: Colors.green));
+      } else {
+        // Handle failure
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to add to pantry')));
+      }
+    }
   }
 
   @override
@@ -114,83 +159,110 @@ class _PantryViewState extends State<Pantry> {
         children: [
           Padding(
             padding: const EdgeInsets.only(bottom: 70), // for fixed bottom bar
-            child: groupedIngredients.isEmpty
-                ? Center(child: CircularProgressIndicator())
-                : ListView.builder(
-                    controller: _scrollController,
-                    itemCount: groupedIngredients.length,
-                    itemBuilder: (context, index) {
-                      final category = 'Category ${index + 1}';
-                      final ingredientsInCategory = groupedIngredients[index];
-                      final isSectionExpanded = isExpanded[index];
+            child:
+                groupedIngredients.isEmpty
+                    ? Center(child: CircularProgressIndicator())
+                    : ListView.builder(
+                      controller: _scrollController,
+                      itemCount: groupedIngredients.length,
+                      itemBuilder: (context, index) {
+                        final category = 'Category ${index + 1}';
+                        final ingredientsInCategory = groupedIngredients[index];
+                        final isSectionExpanded = isExpanded[index];
 
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        child: Card(
-                          elevation: 3,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      category,
-                                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                                    ),
-                                    IconButton(
-                                      icon: Icon(isSectionExpanded
-                                          ? Icons.expand_less
-                                          : Icons.expand_more),
-                                      onPressed: () {
-                                        setState(() {
-                                          isExpanded[index] = !isExpanded[index];
-                                        });
-                                      },
-                                    ),
-                                  ],
-                                ),
-                                AnimatedCrossFade(
-                                  duration: Duration(milliseconds: 300),
-                                  crossFadeState: isSectionExpanded
-                                      ? CrossFadeState.showFirst
-                                      : CrossFadeState.showSecond,
-                                  firstChild: Wrap(
-                                    spacing: 8,
-                                    runSpacing: 10,
-                                    children: ingredientsInCategory.map((ingredient) {
-                                      return ChoiceChip(
-                                        label: Text(ingredient),
-                                        selected: selectedItems.contains(ingredient),
-                                        onSelected: (_) => toggleSelection(ingredient),
-                                      );
-                                    }).toList(),
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          child: Card(
+                            elevation: 3,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        category,
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: Icon(
+                                          isSectionExpanded
+                                              ? Icons.expand_less
+                                              : Icons.expand_more,
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            isExpanded[index] =
+                                                !isExpanded[index];
+                                          });
+                                        },
+                                      ),
+                                    ],
                                   ),
-                                  secondChild: Wrap(
-                                    spacing: 8,
-                                    runSpacing: 10,
-                                    children: ingredientsInCategory
-                                        .take(8)
-                                        .map((ingredient) {
-                                      return ChoiceChip(
-                                        label: Text(ingredient),
-                                        selected: selectedItems.contains(ingredient),
-                                        onSelected: (_) => toggleSelection(ingredient),
-                                      );
-                                    }).toList(),
+                                  AnimatedCrossFade(
+                                    duration: Duration(milliseconds: 300),
+                                    crossFadeState:
+                                        isSectionExpanded
+                                            ? CrossFadeState.showFirst
+                                            : CrossFadeState.showSecond,
+                                    firstChild: Wrap(
+                                      spacing: 8,
+                                      runSpacing: 10,
+                                      children:
+                                          ingredientsInCategory.map((
+                                            ingredient,
+                                          ) {
+                                            return ChoiceChip(
+                                              label: Text(ingredient['name']),
+                                              selected: selectedItems.contains(
+                                                ingredient['name'],
+                                              ),
+                                              onSelected:
+                                                  (_) => toggleSelection(
+                                                    ingredient['name'],
+                                                  ),
+                                            );
+                                          }).toList(),
+                                    ),
+                                    secondChild: Wrap(
+                                      spacing: 8,
+                                      runSpacing: 10,
+                                      children:
+                                          ingredientsInCategory.take(8).map((
+                                            ingredient,
+                                          ) {
+                                            return ChoiceChip(
+                                              label: Text(ingredient['name']),
+                                              selected: selectedItems.contains(
+                                                ingredient['name'],
+                                              ),
+                                              onSelected:
+                                                  (_) => toggleSelection(
+                                                    ingredient['name'],
+                                                  ),
+                                            );
+                                          }).toList(),
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    },
-                  ),
-                  
+                        );
+                      },
+                    ),
           ),
           if (isLoading && hasMore)
             Padding(
@@ -240,7 +312,10 @@ class _PantryViewState extends State<Pantry> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.teal,
                       foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                     ),
                   ),
 
@@ -254,7 +329,10 @@ class _PantryViewState extends State<Pantry> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.deepOrange,
                       foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
                     ),
                   ),
                 ],
