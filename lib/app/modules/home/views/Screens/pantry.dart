@@ -154,7 +154,7 @@ class _PantryViewState extends State<Pantry> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Pantry")),
+      appBar: AppBar(title: Text("List Of Ingredients")),
       body: Stack(
         children: [
           Padding(
