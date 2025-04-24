@@ -87,7 +87,8 @@ class MyPantryController extends GetxController {
       final message = jsonDecode(response.body)['message'];
       print(message);
 
-      myPantryItems.remove(item); // Remove from UI
+      myPantryItems.removeWhere((element) => element['id'] == item['id']);
+
       Get.snackbar(
         'Success',
         message,

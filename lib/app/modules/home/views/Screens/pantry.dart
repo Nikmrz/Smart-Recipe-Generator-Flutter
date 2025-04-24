@@ -32,6 +32,7 @@ class _PantryViewState extends State<Pantry> {
   @override 
   void initState() {
     super.initState();
+    fetchMyPantryItems();
     fetchIngredients();
 
     _scrollController.addListener(() {
@@ -82,6 +83,27 @@ class _PantryViewState extends State<Pantry> {
     }
 
     setState(() => isLoading = false);
+  }
+
+  Future<void> fetchMyPantryItems() async {
+    final response = await http.get(
+      Uri.parse('http://localhost:4000/pantries/mypantry'),
+      headers: {'Authorization': 'Bearer $storedToken'},
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final ingredientsInPantry = data['pantry']['ingredients'] as List;
+
+      setState(() {
+        myPantryItems =
+            ingredientsInPantry
+                .map<String>((ingredient) => ingredient['name'])
+                .toList();
+      });
+    } else {
+      print('Failed to fetch pantry items');
+    }
   }
 
   List<List<Map<String, dynamic>>> _groupIngredients(
@@ -149,6 +171,11 @@ class _PantryViewState extends State<Pantry> {
         ).showSnackBar(SnackBar(content: Text('Failed to add to pantry')));
       }
     }
+  }
+
+  void fetchPantryAndMyItemsAgain() async {
+    await fetchMyPantryItems(); // your method to get user's pantry items
+    setState(() {}); // rebuild the UI to reflect changes
   }
 
   @override
@@ -226,13 +253,13 @@ class _PantryViewState extends State<Pantry> {
                                           ) {
                                             return ChoiceChip(
                                               label: Text(ingredient['name']),
-                                              selected: selectedItems.contains(
-                                                ingredient['name'],
-                                              ),
-                                              onSelected:
-                                                  (_) => toggleSelection(
-                                                    ingredient['name'],
-                                                  ),
+                                              selected: selectedItems.contains(ingredient['name']),
+                                              onSelected: myPantryItems.contains(ingredient['name']) 
+                                                  ? null // Disable the chip
+                                                  : (_) => toggleSelection(ingredient['name']),
+                                              backgroundColor: myPantryItems.contains(ingredient['name'])
+                                                  ? Colors.grey.shade300
+                                                  : null,
                                             );
                                           }).toList(),
                                     ),
@@ -249,9 +276,19 @@ class _PantryViewState extends State<Pantry> {
                                                 ingredient['name'],
                                               ),
                                               onSelected:
-                                                  (_) => toggleSelection(
-                                                    ingredient['name'],
-                                                  ),
+                                                  myPantryItems.contains(
+                                                        ingredient['name'],
+                                                      )
+                                                      ? null // Disable the chip
+                                                      : (_) => toggleSelection(
+                                                        ingredient['name'],
+                                                      ),
+                                              backgroundColor:
+                                                  myPantryItems.contains(
+                                                        ingredient['name'],
+                                                      )
+                                                      ? Colors.grey.shade300
+                                                      : null,
                                             );
                                           }).toList(),
                                     ),
@@ -304,9 +341,13 @@ class _PantryViewState extends State<Pantry> {
                 children: [
                   // My Pantry
                   ElevatedButton.icon(
-                    onPressed: () {
-                    Get.toNamed(Routes.MY_PANTRY);// Navigate to My Pantry view
+                    onPressed: () async {
+                      await Get.toNamed(
+                        Routes.MY_PANTRY,
+                      ); // wait for MyPantryView to finish
+                      fetchPantryAndMyItemsAgain(); // refresh when coming back
                     },
+
                     icon: Icon(Icons.kitchen),
                     label: Text("My Pantry"),
                     style: ElevatedButton.styleFrom(
