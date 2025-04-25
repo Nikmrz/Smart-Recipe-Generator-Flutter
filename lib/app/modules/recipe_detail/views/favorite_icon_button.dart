@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+
+import 'package:smart_recipe_generator_flutter/app/modules/home/controllers/favorite_recipes_controller.dart';
 
 class FavoriteIconButton extends StatefulWidget {
   final String recipeId;
@@ -73,6 +77,8 @@ class _FavoriteIconButtonState extends State<FavoriteIconButton> {
       final success = data["success"] ?? false;
 
       if (success) {
+        Get.find<FavoriteRecipesController>().fetchFavoriteRecipes();
+
         // Toggle the favorite state
         setState(() => isFavorite = !isFavorite);
 
