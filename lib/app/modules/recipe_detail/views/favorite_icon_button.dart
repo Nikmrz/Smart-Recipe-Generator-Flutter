@@ -21,6 +21,36 @@ class _FavoriteIconButtonState extends State<FavoriteIconButton> {
   bool isFavorite = false;
   bool isLoading = false;
 
+  @override
+  void initState() {
+    super.initState();
+    fetchFavoriteStatus(); // Fetch on load
+  }
+
+  Future<void> fetchFavoriteStatus() async {
+    String? storedToken = GetStorage().read('auth_token');
+    final url = Uri.parse("http://localhost:4000/favorites");
+    final headers = {"Authorization": "Bearer $storedToken"};
+
+    try {
+      final response = await http.get(url, headers: headers);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> favorites = jsonDecode(response.body);
+
+        final isFav = favorites.any(
+          (recipe) => recipe["id"].toString() == widget.recipeId,
+        );
+        setState(() => isFavorite = isFav);
+      } else {
+        debugPrint("Failed to fetch favorites: ${response.statusCode}");
+      }
+    } catch (e) {
+      debugPrint("Error fetching favorite status: $e");
+    }
+  }
+
+
   Future<void> toggleFavorite() async {
     setState(() => isLoading = true);
 
