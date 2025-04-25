@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flashy_tab_bar2/flashy_tab_bar2.dart';
 import './Screens/pantry.dart' as firstTab;
 import './Screens/home.dart' as secondTab;
-import './Screens/favourite.dart' as thirdTab;
+import 'Screens/favorite.dart' as thirdTab;
 import './Screens/profile.dart' as fourthTab;
 import './dailog/alert.dart' as alert;
 
@@ -17,7 +17,7 @@ class HomeScreenState extends State<HomeView> {
   final List<Widget> _screens = [
     firstTab.Pantry(),
     secondTab.Home(),
-    thirdTab.Favourite(),
+    thirdTab.Favorite(),
     fourthTab.Profile(),
   ];
 

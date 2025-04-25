@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:smart_recipe_generator_flutter/app/modules/home/controllers/favorite_recipes_controller.dart';
 import 'package:smart_recipe_generator_flutter/app/modules/recipe_detail/views/recipe_detail_view.dart';
 
-class Favourite extends StatelessWidget {
+class Favorite extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Instantiate the controller
