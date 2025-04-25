@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smart_recipe_generator_flutter/app/models/recipe.dart';
+import 'package:smart_recipe_generator_flutter/app/modules/recipe_detail/views/favorite_icon_button.dart';
 
 class RecipeDetailView extends StatelessWidget {
   final Recipe recipe;
@@ -34,13 +35,24 @@ class RecipeDetailView extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            // Recipe Name
-            Text(
-              recipe.name,
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Colors.deepOrange,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Recipe Name
+                Text(
+                  recipe.name,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.deepOrange,
+                  ),
+                ),
+
+                // Love Icon
+                FavoriteIconButton(
+                  recipeId: recipe.id,
+                  recipeName: recipe.name,
+                ),
+              ],
             ),
 
             const SizedBox(height: 24),
